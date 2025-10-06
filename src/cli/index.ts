@@ -43,7 +43,7 @@ export function runCli() {
             async (argv) => {
                 const cfg = await loadConfig();
                 const snap = await readBundleSnapshot(process.cwd(), argv.fixture as string | undefined, argv.sizes as string | undefined);
-                if (!snap) { console.log(pc.yellow("No manifest found…")); return; }
+                if (!snap) { console.log(pc.yellow("No manifest found.")); return; }
                 const dup = detectDuplicateVendors(snap, cfg);
                 await writeReport(snap, dup);
                 maybePrintJSON(argv.json, { snapshot: snap, dupVendors: dup, config: cfg });
