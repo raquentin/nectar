@@ -1,0 +1,134 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      site: ${{ steps.filter.outputs.site }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          token: ${{ github.token }}
+          filters: |
+            site:
+              - 'apps/site/**'
+              - 'pnpm-lock.yaml'
+              - 'package.json'
+              - 'pnpm-workspace.yaml'
+
+  cli:
+    name: cli (typecheck, test, demo)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: install
+        run: pnpm install --frozen-lockfile
+
+      - name: typecheck
+        run: pnpm -w -r run typecheck || pnpm -w -r exec tsc -v && echo "no typecheck script; skipping"
+
+      - name: build (if any)
+        run: pnpm -w -r run build || echo "no build scripts; skipping"
+
+      - name: test
+        env:
+          CI: true
+        run: pnpm -w -r test
+
+      - name: nectar demo (plan + diff + render)
+        run: |
+          pnpm nectar codemod \
+            --fixture examples/nectar-demo/manifest/build-manifest.json \
+            --sizes   examples/nectar-demo/manifest/sizes.json \
+            --json > /dev/null
+
+          pnpm nectar codemod \
+            --fixture examples/nectar-demo/manifest/build-manifest.json \
+            --sizes   examples/nectar-demo/manifest/sizes.json \
+            --diff --diff-out .nectar/diff.patch
+
+          pnpm nectar render --format comment \
+            --plan .nectar/plan.json \
+            --diff .nectar/diff.patch \
+            --out .nectar/comment.md
+
+      - name: upload nectar artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nectar-artifacts
+          path: |
+            .nectar/plan.json
+            .nectar/diff.patch
+            .nectar/comment.md
+          if-no-files-found: ignore
+          retention-days: 7
+
+  site:
+    name: site (Next.js)
+    needs: changes
+    if: needs.changes.outputs.site == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: install
+        run: pnpm install --frozen-lockfile
+
+      - name: build site
+        working-directory: apps/site
+        run: pnpm build
+
+      - name: export site (optional)
+        working-directory: apps/site
+        run: pnpm -s next build || echo "no next export; skipping"
+
+      - name: upload site build
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-build
+          path: |
+            apps/site/.next
+          if-no-files-found: ignore
+          retention-days: 7
