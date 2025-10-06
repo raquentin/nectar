@@ -24,4 +24,4 @@ jobs:
       - name: run vitest
         env:
           CI: true
-        run: npx vitest run -r
+        run: npx vitest run
