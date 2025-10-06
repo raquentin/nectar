@@ -1,0 +1,13 @@
+{
+  "heavyDeps": ["date-fns", "chart.js"],
+  "dynamicAllowlist": ["Chart"],
+  "pages": {
+    "include": ["/**"],
+    "exclude": []
+  },
+  "thresholds": {
+    "minKBDeltaToReport": 25,
+    "minMsDeltaToReport": 150,
+    "minEstimatedKB": 0
+  }
+}

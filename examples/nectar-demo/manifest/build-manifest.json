@@ -1,0 +1,22 @@
+{
+  "pages": {
+    "/": [
+      "static/chunks/framework.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/index.js"
+    ],
+    "/date": [
+      "static/chunks/framework.js",
+      "static/chunks/main.js",
+      "static/chunks/vendors-date-fns.js",
+      "static/chunks/pages/date.js"
+    ],
+    "/chart": [
+      "static/chunks/framework.js",
+      "static/chunks/main.js",
+      "static/chunks/vendors-chart-js.js",
+      "static/chunks/pages/chart.js"
+    ]
+  }
+}
+

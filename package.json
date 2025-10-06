@@ -1,0 +1,42 @@
+{
+  "name": "nectar",
+  "version": "0.0.1",
+  "type": "module",
+  "license": "AGPL-3.0-or-later",
+  "bin": {
+    "nectar": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "dev": "tsx src/index.ts",
+    "analyze": "tsx src/index.ts analyze",
+    "codemod": "tsx src/index.ts codemod --dry",
+    "measure": "tsx src/index.ts measure",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "demo:plan": "cd examples/nectar-demo && tsx ../../src/index.ts codemod --fixture manifest/build-manifest.json --sizes manifest/sizes.json",
+    "demo:diff": "cd examples/nectar-demo && tsx ../../src/index.ts codemod --dry --diff --fixture manifest/build-manifest.json --sizes manifest/sizes.json",
+    "demo:apply": "cd examples/nectar-demo && tsx ../../src/index.ts codemod --apply --fixture manifest/build-manifest.json --sizes manifest/sizes.json --no-typecheck",
+    "demo:restore": "cd examples/nectar-demo && tsx ../../src/index.ts restore",
+    "demo:render": "cd examples/nectar-demo && tsx ../../src/index.ts render --diff .nectar/diff.patch --out .nectar/comment.md",
+    "site:dev": "pnpm --filter ./apps/site dev",
+    "site:build": "pnpm --filter ./apps/site build",
+    "site:start": "pnpm --filter ./apps/site start"
+  },
+  "dependencies": {
+    "globby": "^14.0.2",
+    "picocolors": "^1.0.0",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "@types/yargs": "^17.0.33",
+    "chrome-launcher": "^1.2.1",
+    "diff": "^8.0.0",
+    "lighthouse": "^12.8.2",
+    "nectar": "^5.0.6",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.0"
+  }
+}
