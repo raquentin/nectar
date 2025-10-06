@@ -15,23 +15,6 @@ permissions:
   contents: read
 
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      site: ${{ steps.filter.outputs.site }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          token: ${{ github.token }}
-          filters: |
-            site:
-              - 'apps/site/**'
-              - 'pnpm-lock.yaml'
-              - 'package.json'
-              - 'pnpm-workspace.yaml'
-
   cli:
     runs-on: ubuntu-latest
     steps:
@@ -41,44 +24,42 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
-
-      - name: enable corepack (pnpm)
-        run: |
-          corepack enable
-          corepack prepare pnpm@9 --activate
-          pnpm -v
+          cache: 'npm'
 
       - name: install
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: typecheck
-        run: pnpm -w -r run typecheck || echo "no typecheck script"
+        run: npm run -ws --if-present typecheck || echo "no typecheck"
 
       - name: build (if any)
-        run: pnpm -w -r run build || echo "no build scripts"
+        run: npm run -ws --if-present build || echo "no build"
 
       - name: test
         env:
           CI: true
-        run: pnpm -w -r test
+        run: npm run -ws --if-present test
 
+      # demo: use tsx to run the CLI directly
       - name: nectar demo (plan + diff + render)
         run: |
-          pnpm nectar codemod \
-            --fixture examples/nectar-demo/manifest/build-manifest.json \
-            --sizes   examples/nectar-demo/manifest/sizes.json \
-            --json > /dev/null
+          npm run nectar -- \
+            codemod \
+              --fixture examples/nectar-demo/manifest/build-manifest.json \
+              --sizes   examples/nectar-demo/manifest/sizes.json \
+              --json > /dev/null
 
-          pnpm nectar codemod \
-            --fixture examples/nectar-demo/manifest/build-manifest.json \
-            --sizes   examples/nectar-demo/manifest/sizes.json \
-            --diff --diff-out .nectar/diff.patch
+          npm run nectar -- \
+            codemod \
+              --fixture examples/nectar-demo/manifest/build-manifest.json \
+              --sizes   examples/nectar-demo/manifest/sizes.json \
+              --diff --diff-out .nectar/diff.patch
 
-          pnpm nectar render --format comment \
-            --plan .nectar/plan.json \
-            --diff .nectar/diff.patch \
-            --out .nectar/comment.md
+          npm run nectar -- \
+            render --format comment \
+              --plan .nectar/plan.json \
+              --diff .nectar/diff.patch \
+              --out .nectar/comment.md
 
       - name: upload nectar artifacts
         if: always()
@@ -92,34 +73,36 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  # optional: build docs site only when it changes
   site:
-    needs: changes
-    if: needs.changes.outputs.site == 'true'
     runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
     steps:
       - uses: actions/checkout@v4
-
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          token: ${{ github.token }}
+          filters: |
+            site:
+              - 'apps/site/**'
+              - 'package.json'
+              - 'package-lock.json'
       - name: setup node
+        if: steps.filter.outputs.site == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
-
-      - name: enable corepack (pnpm)
-        run: |
-          corepack enable
-          corepack prepare pnpm@9 --activate
-          pnpm -v
-
+          cache: 'npm'
       - name: install
-        run: pnpm install --frozen-lockfile
-
+        if: steps.filter.outputs.site == 'true'
+        run: npm ci
       - name: build site
+        if: steps.filter.outputs.site == 'true'
         working-directory: apps/site
-        run: pnpm build
-
+        run: npm run build --if-present
       - name: upload site build
-        if: always()
+        if: always() && steps.filter.outputs.site == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: site-build

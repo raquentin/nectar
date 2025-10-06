@@ -8,6 +8,9 @@
   },
   "scripts": {
     "build": "tsc -p .",
+    "nectar": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "echo \"(no build step)\"",
     "dev": "tsx src/index.ts",
     "analyze": "tsx src/index.ts analyze",
     "codemod": "tsx src/index.ts codemod --dry",
