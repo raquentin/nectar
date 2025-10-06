@@ -6,8 +6,6 @@ is a repeatable pipeline for debloating Next.js apps. It:
 - rebuilds + remeasures,
 - opens a PR with tiny diffs and a report (bytes saved + LCP/hydration deltas).
 
-> TL;DR: it doesn’t just tell you what’s wrong — it gives you a clean diff that makes it right.
-
 ### Highlights
 - impact-first: changes are ranked imperically with estimated KB/ms savings.
 - safe by default: code changes are transactional with backups and a typecheck gate.
