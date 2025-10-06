@@ -1,4 +1,4 @@
-# nectar
+# 🌺 nectar
 is a repeatable pipeline for debloating Next.js apps. It:
 - builds a Next.js repo to measure its baseline bundle size and mount latency,
 - statically analyzes code to find optimizations,
@@ -6,7 +6,7 @@ is a repeatable pipeline for debloating Next.js apps. It:
 - rebuilds + remeasures,
 - opens a PR with tiny diffs and a report (bytes saved + LCP/hydration deltas).
 
-TL;DR: it doesn’t just tell you what’s wrong — it gives you a clean diff that makes it right.
+> TL;DR: it doesn’t just tell you what’s wrong — it gives you a clean diff that makes it right.
 
 ### Highlights
 - impact-first: changes are ranked imperically with estimated KB/ms savings.
