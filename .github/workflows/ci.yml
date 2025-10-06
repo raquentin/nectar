@@ -16,7 +16,6 @@ permissions:
 
 jobs:
   changes:
-    name: detect changes
     runs-on: ubuntu-latest
     outputs:
       site: ${{ steps.filter.outputs.site }}
@@ -34,7 +33,6 @@ jobs:
               - 'pnpm-workspace.yaml'
 
   cli:
-    name: cli (typecheck, test, demo)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,21 +41,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: pnpm
 
-      - name: setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+      - name: enable corepack (pnpm)
+        run: |
+          corepack enable
+          corepack prepare pnpm@9 --activate
+          pnpm -v
 
       - name: install
         run: pnpm install --frozen-lockfile
 
       - name: typecheck
-        run: pnpm -w -r run typecheck || pnpm -w -r exec tsc -v && echo "no typecheck script; skipping"
+        run: pnpm -w -r run typecheck || echo "no typecheck script"
 
       - name: build (if any)
-        run: pnpm -w -r run build || echo "no build scripts; skipping"
+        run: pnpm -w -r run build || echo "no build scripts"
 
       - name: test
         env:
@@ -94,7 +93,6 @@ jobs:
           retention-days: 7
 
   site:
-    name: site (Next.js)
     needs: changes
     if: needs.changes.outputs.site == 'true'
     runs-on: ubuntu-latest
@@ -105,12 +103,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+          cache: pnpm
 
-      - name: setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+      - name: enable corepack (pnpm)
+        run: |
+          corepack enable
+          corepack prepare pnpm@9 --activate
+          pnpm -v
 
       - name: install
         run: pnpm install --frozen-lockfile
@@ -119,16 +118,11 @@ jobs:
         working-directory: apps/site
         run: pnpm build
 
-      - name: export site (optional)
-        working-directory: apps/site
-        run: pnpm -s next build || echo "no next export; skipping"
-
       - name: upload site build
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: site-build
-          path: |
-            apps/site/.next
+          path: apps/site/.next
           if-no-files-found: ignore
           retention-days: 7
