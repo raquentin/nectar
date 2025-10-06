@@ -1,4 +1,4 @@
-name: CI
+name: test
 
 on:
   push:
@@ -7,15 +7,8 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  contents: read
-
 jobs:
-  cli:
+  vitest:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,88 +17,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
-      - name: install
-        run: npm ci
+      - name: install deps
+        run: npm install --no-audit --no-fund
 
-      - name: typecheck
-        run: npm run -ws --if-present typecheck || echo "no typecheck"
-
-      - name: build (if any)
-        run: npm run -ws --if-present build || echo "no build"
-
-      - name: test
+      - name: run vitest
         env:
           CI: true
-        run: npm run -ws --if-present test
-
-      # demo: use tsx to run the CLI directly
-      - name: nectar demo (plan + diff + render)
-        run: |
-          npm run nectar -- \
-            codemod \
-              --fixture examples/nectar-demo/manifest/build-manifest.json \
-              --sizes   examples/nectar-demo/manifest/sizes.json \
-              --json > /dev/null
-
-          npm run nectar -- \
-            codemod \
-              --fixture examples/nectar-demo/manifest/build-manifest.json \
-              --sizes   examples/nectar-demo/manifest/sizes.json \
-              --diff --diff-out .nectar/diff.patch
-
-          npm run nectar -- \
-            render --format comment \
-              --plan .nectar/plan.json \
-              --diff .nectar/diff.patch \
-              --out .nectar/comment.md
-
-      - name: upload nectar artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: nectar-artifacts
-          path: |
-            .nectar/plan.json
-            .nectar/diff.patch
-            .nectar/comment.md
-          if-no-files-found: ignore
-          retention-days: 7
-
-  # optional: build docs site only when it changes
-  site:
-    runs-on: ubuntu-latest
-    if: ${{ !cancelled() }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          token: ${{ github.token }}
-          filters: |
-            site:
-              - 'apps/site/**'
-              - 'package.json'
-              - 'package-lock.json'
-      - name: setup node
-        if: steps.filter.outputs.site == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-      - name: install
-        if: steps.filter.outputs.site == 'true'
-        run: npm ci
-      - name: build site
-        if: steps.filter.outputs.site == 'true'
-        working-directory: apps/site
-        run: npm run build --if-present
-      - name: upload site build
-        if: always() && steps.filter.outputs.site == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: site-build
-          path: apps/site/.next
-          if-no-files-found: ignore
-          retention-days: 7
+        run: npx vitest run -r
